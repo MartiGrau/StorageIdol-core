@@ -1,0 +1,1 @@
+# StorageIdol-core
