@@ -13,7 +13,7 @@ modules:
   customer_service: true
   debt_collection: true
   lead_management: false            # Enable when ready
-  voice: false                      # Enable when Twilio number is configured
+  voice: false                      # Enable when Telnyx phone number is provisioned
 
 # ── Agent modules composition ────────────────────────────────────────────────
 agent:
@@ -68,3 +68,17 @@ escalation:
 knowledge_base:
   path: knowledge-base/
   embedding_model: text-embedding-3-small
+
+# ── Model overrides (optional — falls back to platform defaults in packages/llm) ──
+# Uncomment to override the model tier for specific tasks for this client.
+# Use task keys: classification | conversation | reasoning | judge
+# model_overrides:
+#   conversation: claude-haiku-4-5-20251001   # downgrade for cost savings
+#   reasoning: claude-sonnet-4-6              # downgrade Opus if overkill for this client
+
+# ── EU AI Act Art. 50 — AI identity disclosure (mandatory) ────────────────────
+# The presence of this disclosure is enforced by channel/formatter.py.
+# The wording is configurable — but it cannot be removed.
+disclosure:
+  voice_greeting: "Esta llamada puede ser atendida por un asistente de inteligencia artificial en nombre de {brand_name}. Si prefiere hablar con una persona, dígalo en cualquier momento."
+  whatsapp_first_message: "Hola 👋 Soy un asistente de inteligencia artificial de *{brand_name}*. Estoy aquí para ayudarte. ¿En qué puedo ayudarte hoy?"

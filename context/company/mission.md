@@ -13,7 +13,7 @@ The system is split into two layers:
 **Core (owned by StorageIdol, reusable across all clients)**
 - Multi-agent architecture built with LangGraph
 - Voice synthesis via ElevenLabs
-- Telephony via Twilio
+- Telephony via LiveKit + Telnyx (Spanish +34 SIP numbers)
 - WhatsApp messaging via WhatsApp Cloud API
 - Debt scheduler engine (D+N staged sequences)
 - Human escalation logic

@@ -18,6 +18,13 @@ StorageIdol documentation. Read the file most relevant to your current task befo
 | System topology and data flows | `architecture/overview.md` |
 | Tech stack and library choices | `architecture/tech-stack.md` |
 | Core vs. Client Graph vs. Config (critical read) | `architecture/core-vs-config.md` |
+| Idempotency, checkpointing, cost guardrails | `architecture/runtime-fundamentals.md` |
+
+## Compliance
+
+| Topic | File |
+|---|---|
+| EU AI Act Art. 50 — AI disclosure obligations | `compliance/eu-ai-act.md` |
 
 ## Components
 

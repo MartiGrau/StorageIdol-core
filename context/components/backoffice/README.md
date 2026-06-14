@@ -2,7 +2,7 @@
 
 StorageIdol internal tool for managing all clients, monitoring system health, and triggering provisioning operations.
 
-**App location:** `apps/backoffice/`
+**App location:** `core/backoffice/`
 
 **Features:**
 - Client list and status overview

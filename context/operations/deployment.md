@@ -40,7 +40,20 @@ scripts/provision-client.sh <client-id>
 scripts/deprovision-client.sh <client-id>
 ```
 
-Client configs live in `infrastructure/clients/<client-id>/config.yaml`.
+Client configs live in `clients/<client-id>/config.yaml`. The deploy artefact (docker-compose + .env) is generated under `deploy/clients/<client-id>/`.
+
+## Deployment tiers
+
+StorageIdol operates two deployment models:
+
+| Tier | Who owns the server | Isolation | Cost to StorageIdol |
+|---|---|---|---|
+| **Client-hosted** (primary) | Client provides their VPS/cloud | Physical — separate Postgres, separate Redis | €0/mo infra |
+| **StorageIdol-hosted** (secondary) | StorageIdol provisions a VPS | Logical — shared Postgres (RLS), shared Langfuse with per-client projects | ~€80–120/mo/client |
+
+Both tiers use the identical `deploy/_template/` stack. The only difference is `profile.md` field `hosting: client | storageidol`.
+
+For StorageIdol-hosted deployments, `scripts/provision-vps.sh <client-id>` creates and bootstraps the server automatically.
 
 ## Rollback
 

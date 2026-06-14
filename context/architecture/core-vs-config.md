@@ -11,7 +11,7 @@ Three distinct layers. Confusing them is the most common architectural mistake.
 What belongs here:
 - FastAPI webhook handlers (generic — no client logic)
 - LangGraph module subgraphs (behavior building blocks, no client-specific routing)
-- Third-party SDK wrappers (WhatsApp, ElevenLabs, Twilio, Claude)
+- Third-party SDK wrappers (WhatsApp, ElevenLabs, Telnyx SIP, Deepgram, Claude)
 - Shared data models (Contact, Conversation, Message, DebtCase)
 - Watchdog monitoring sidecar
 - Dashboard and backoffice frontends

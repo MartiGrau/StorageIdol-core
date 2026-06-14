@@ -47,6 +47,14 @@ _MODEL_ROUTING: dict[Task, str] = {
 }
 
 
-def model_for_task(task: Task) -> str:
-    """Return the model ID for a given task category."""
+def model_for_task(task: Task, overrides: dict[str, str] | None = None) -> str:
+    """Return the model ID for a given task, respecting per-client config overrides.
+
+    Pass `config.model_overrides` to allow clients to downgrade or change models
+    without touching platform code. Unknown task keys in overrides are ignored.
+    """
+    if overrides:
+        override = overrides.get(task.value)
+        if override:
+            return override
     return _MODEL_ROUTING[task]

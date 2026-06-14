@@ -75,6 +75,12 @@ class ClientConfig(BaseModel):
     escalation_webhook_url: str | None = None
     escalation_triggers: list[str] = Field(default_factory=list)
 
+    # Per-client model overrides — falls back to packages/llm defaults when empty
+    model_overrides: dict[str, str] = Field(default_factory=dict)
+
+    # EU AI Act Art. 50 disclosure wording — presence is mandatory, wording is configurable
+    disclosure: dict[str, str] = Field(default_factory=dict)
+
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "ClientConfig":
         """Parse from a raw config.yaml dict."""
@@ -102,6 +108,8 @@ class ClientConfig(BaseModel):
             embedding_model=kb.get("embedding_model", "text-embedding-3-small"),
             escalation_webhook_url=esc.get("webhook_url"),
             escalation_triggers=esc.get("triggers", []),
+            model_overrides=raw.get("model_overrides") or {},
+            disclosure=raw.get("disclosure") or {},
         )
 
 

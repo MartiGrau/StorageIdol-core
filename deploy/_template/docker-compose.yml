@@ -157,17 +157,10 @@ services:
     depends_on:
       - api
 
-  watchtower:
-    image: containrrr/watchtower:latest
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_POLL_INTERVAL: 300
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_INCLUDE_RESTARTING: "true"
-      REPO_USER: ${REGISTRY_USER}
-      REPO_PASS: ${REGISTRY_PASS}
+  # NOTE: Watchtower (auto-pull) is intentionally excluded from this template.
+  # Auto-pulling new image versions in production bypasses manual approval and breaks
+  # pinned versions. New versions are deployed via the GitHub Actions deploy workflow
+  # with a manual approval gate. See context/operations/deployment.md.
 
 volumes:
   postgres_data:

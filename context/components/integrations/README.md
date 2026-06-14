@@ -20,7 +20,7 @@ Adapters for third-party services. Each integration is a thin wrapper that norma
 ### Voice: LiveKit Agents (`packages/voice/`)
 - **STT:** Deepgram (streaming, real-time)
 - **TTS:** ElevenLabs (voice ID per client, streaming)
-- **Telephony:** LiveKit native SIP — inbound PSTN calls and outbound calls without a Twilio bridge
+- **PSTN telephony:** Telnyx SIP trunk — provides Spanish (+34) phone numbers and routes PSTN calls to LiveKit
 - Built-in turn detection, interruption handling, noise cancellation
 - Target latency: <500ms end-to-end
 - `bridge.py` connects LiveKit session → client's LangGraph for reasoning (no business logic duplicated between WhatsApp and voice)

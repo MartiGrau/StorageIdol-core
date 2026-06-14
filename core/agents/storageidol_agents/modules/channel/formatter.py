@@ -62,6 +62,34 @@ Rules:
 """
 
 
+_DEFAULT_VOICE_DISCLOSURE = (
+    "Esta llamada puede ser atendida por un asistente de inteligencia artificial. "
+    "Si prefiere hablar con una persona, dígalo en cualquier momento."
+)
+_DEFAULT_WHATSAPP_DISCLOSURE = (
+    "Hola 👋 Soy un asistente de inteligencia artificial. Estoy aquí para ayudarte."
+)
+
+
+def _get_disclosure(state: AgentState, config: ClientConfig) -> str:
+    """Return the EU AI Act Art. 50 disclosure for the first turn of a new conversation.
+
+    The disclosure is mandatory (EU AI Act Art. 50) but the wording comes from
+    config.disclosure so clients can localise or adapt it. If not configured,
+    a safe default is used. The disclosure is never empty on turn 1.
+    """
+    if state.turn_count != 1:
+        return ""
+
+    brand = config.brand_name
+    if state.channel == Channel.VOICE:
+        template = config.disclosure.get("voice_greeting", _DEFAULT_VOICE_DISCLOSURE)
+    else:
+        template = config.disclosure.get("whatsapp_first_message", _DEFAULT_WHATSAPP_DISCLOSURE)
+
+    return template.replace("{brand_name}", brand)
+
+
 def channel_formatter_node(config: ClientConfig):
     """
     Returns a LangGraph node that reformats the reply for the current channel.
@@ -72,20 +100,26 @@ def channel_formatter_node(config: ClientConfig):
     async def _node(state: dict) -> dict:
         s = AgentState(**state)
 
-        # If there's no reply yet, nothing to format
         if not s.reply:
             return {}
 
-        # For WhatsApp, Claude modules already write decent text.
-        # Only invoke the formatter if the channel actually needs transformation.
         if s.channel == Channel.VOICE:
             formatted = await _format_for_voice(s, config)
-            return {"reply": formatted}
         elif s.channel == Channel.WHATSAPP:
             formatted = await _format_for_whatsapp(s, config)
-            return {"reply": formatted}
+        else:
+            formatted = s.reply
 
-        return {}
+        # EU AI Act Art. 50 — prepend AI identity disclosure on the first turn.
+        # This runs after formatting so the disclosure is never itself reformatted.
+        disclosure = _get_disclosure(s, config)
+        if disclosure:
+            if s.channel == Channel.VOICE:
+                formatted = disclosure + " " + formatted
+            else:
+                formatted = disclosure + "\n\n" + formatted
+
+        return {"reply": formatted}
 
     return _node
 

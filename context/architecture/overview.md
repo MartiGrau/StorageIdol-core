@@ -35,16 +35,17 @@ Independent LangGraph subgraphs. Each has a single responsibility and its own te
 
 | Module | Purpose |
 |---|---|
-| `auth/phone_dni` | Identity validation |
+| `auth/phone_dni` | Identity validation (phone + DNI) |
 | `intent/storage` | Storage domain intent classifier |
-| `intent/financial` | Financial domain intent classifier |
-| `conversation/faq_rag` | Knowledge base RAG answering |
+| `intent/generic` | Generic multi-domain intent classifier |
+| `conversation/faq_rag` | Knowledge base RAG answering (pgvector) |
 | `conversation/crm_lookup` | CRM data retrieval via MCP |
-| `debt/soft` | Debt recovery: negotiate, extend, recover possession |
-| `debt/hard` | Debt recovery: escalate to legal |
-| `lead/qualify_storage` | Storage lead qualification |
-| `escalation/human_handoff` | Human escalation with context |
-| `voice/bridge` | Real-time voice STT/TTS bridge |
+| `debt/soft` | Soft debt recovery: negotiate, extend (D+3, D+10) |
+| `debt/hard` | Hard debt recovery: escalate to legal (D+20, D+30) |
+| `lead/qualify_storage` | Storage lead qualification (size, duration, budget) |
+| `escalation/human_handoff` | Human escalation with full context |
+| `channel/formatter` | **Always last** — adapts reply for voice vs WhatsApp UX |
+| `channel/prompt_adapter` | Utility: injects channel constraints into any system prompt |
 
 ### Client configuration (`clients/<id>/`)
 Per-client data. Never deployed to other clients. Contains:
@@ -80,9 +81,18 @@ StorageIdol internal monitoring. Receives alerts from all client watchdogs. Auto
 2. API validates request signature, extracts `case_id`, `contact_phone`, `stage`
 3. Debt collection agent loads correct stage template from `clients/<id>/debt-templates.yaml`
 4. Sends WhatsApp template message via `packages/whatsapp`
-5. If voice stage: `packages/voice` places outbound Twilio call
+5. If voice stage: `packages/voice` initiates outbound LiveKit call via Telnyx SIP trunk
 6. Client response (if any) resumes the LangGraph session
 
 ## Multi-brand isolation
 
 Each brand (e.g. Retras and Citium) is treated as a separate client with a separate deployment, separate Docker stack, and separate Postgres instance. Routing is by phone number — each brand's WhatsApp number maps to one deployment.
+
+## Deployment tiers
+
+| Tier | Who provides the server | Data isolation |
+|---|---|---|
+| **Client-hosted** (primary) | Client's own VPS / cloud | Physical — dedicated Postgres, Redis per client |
+| **StorageIdol-hosted** (secondary) | StorageIdol-managed VPS | Logical — shared Postgres with Row Level Security, shared Langfuse with per-client projects |
+
+Both tiers run the identical `deploy/_template/` Docker stack. See `context/operations/deployment.md` for details.

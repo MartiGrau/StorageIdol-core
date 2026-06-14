@@ -1,0 +1,70 @@
+name: Doc Lint
+
+on:
+  push:
+    paths:
+      - "context/**"
+      - "**.md"
+  pull_request:
+    paths:
+      - "context/**"
+      - "**.md"
+
+jobs:
+  doc-lint:
+    name: Check for forbidden strings in documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail on stale 'apps/' layout references
+        run: |
+          # The repo layout uses core/ — not apps/. The only allowed 'apps/' reference
+          # is in git history or this workflow file itself.
+          MATCHES=$(grep -rn --include="*.md" "apps/" context/ || true)
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: Found 'apps/' references in context/ docs (layout was renamed to core/):"
+            echo "$MATCHES"
+            exit 1
+          fi
+
+      - name: Fail on Twilio references in docs
+        run: |
+          # Voice runtime is LiveKit + Telnyx. Twilio is not used.
+          MATCHES=$(grep -rn --include="*.md" -i "twilio" context/ || true)
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: Found 'twilio' references in context/ docs (voice stack is LiveKit + Telnyx):"
+            echo "$MATCHES"
+            exit 1
+          fi
+
+      - name: Fail on pip install requirements.txt references in docs
+        run: |
+          # Python dependencies are managed by uv workspace. pip install is not used.
+          MATCHES=$(grep -rn --include="*.md" "requirements.txt" context/ || true)
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: Found 'requirements.txt' references in context/ docs (use 'uv sync'):"
+            echo "$MATCHES"
+            exit 1
+          fi
+
+      - name: Fail on stale infrastructure/clients config path
+        run: |
+          # Client configs live in clients/<id>/config.yaml — not infrastructure/clients/.
+          MATCHES=$(grep -rn --include="*.md" "infrastructure/clients/" context/ || true)
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: Found 'infrastructure/clients/' in context/ docs (correct path is clients/<id>/):"
+            echo "$MATCHES"
+            exit 1
+          fi
+
+      - name: Fail on bare npm install (not pnpm) in docs
+        run: |
+          # JS dependencies use pnpm workspace. Bare 'npm install' is not used.
+          # Use word-boundary match to avoid false positives on 'pnpm install'.
+          MATCHES=$(grep -rn --include="*.md" -P "(?<![a-z])npm install" context/ || true)
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: Found 'npm install' in context/ docs (use 'pnpm install'):"
+            echo "$MATCHES"
+            exit 1
+          fi
