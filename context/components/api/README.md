@@ -2,7 +2,7 @@
 
 The central REST API that receives all inbound webhooks (WhatsApp, Twilio) and exposes endpoints for the dashboard and backoffice.
 
-**App location:** `apps/api/`
+**App location:** `core/api/`
 
 **Responsibilities:**
 - Receive and validate WhatsApp Cloud API webhooks

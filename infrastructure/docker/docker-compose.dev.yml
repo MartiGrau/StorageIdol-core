@@ -1,8 +1,13 @@
+# StorageIdol — Development Docker Compose
+# Runs all infrastructure services for local development.
+# Usage: docker compose -f infrastructure/docker/docker-compose.dev.yml up -d
+
 version: "3.9"
 
 services:
+  # ── Primary data layer ───────────────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: storageidol
       POSTGRES_PASSWORD: storageidol
@@ -11,11 +16,66 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storageidol"]
+      interval: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  # ── Langfuse (LLM observability) ──────────────────────────────────────────────
+  langfuse-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 5s
+      retries: 5
+
+  langfuse:
+    image: langfuse/langfuse:latest
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-postgres:5432/langfuse_dev
+      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_SECRET: dev-secret-change-in-prod
+      LANGFUSE_INIT_USER_EMAIL: dev@storageidol.com
+      LANGFUSE_INIT_USER_PASSWORD: devpassword
+      LANGFUSE_INIT_USER_NAME: Dev
+      LANGFUSE_INIT_ORG_ID: storageidol-dev
+      LANGFUSE_INIT_ORG_NAME: StorageIdol Dev
+    ports:
+      - "3001:3000"
+    depends_on:
+      langfuse-postgres:
+        condition: service_healthy
+
+  # ── LiveKit server (local dev voice) ──────────────────────────────────────────
+  # In production each client uses the hosted LiveKit Cloud or a dedicated instance.
+  # For local dev a single LiveKit dev server suffices.
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"   # HTTP API
+      - "7881:7881"   # RTCP
+      - "7882:7882/udp"  # UDP RTP
+    environment:
+      LIVEKIT_KEYS: "devkey: devsecret"
 
 volumes:
   postgres_data:
+  langfuse_postgres_data:

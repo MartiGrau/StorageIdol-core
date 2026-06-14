@@ -1,0 +1,1 @@
+Build and push Docker images for the client ID provided in args, then generate the deploy config. Steps: (1) Run scripts/build-image.sh <client-id>, (2) verify the image built successfully, (3) generate deploy/clients/<client-id>/ from the template. If no client ID was provided, ask for it.

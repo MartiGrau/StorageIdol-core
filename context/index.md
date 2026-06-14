@@ -1,61 +1,64 @@
 # Context Index
 
-Quick navigation map for any AI agent or developer. Find the topic below and jump directly to the right file.
+StorageIdol documentation. Read the file most relevant to your current task before making decisions.
 
-## Company & Product
+## Company
+
 | Topic | File |
 |---|---|
-| Mission, vision, product philosophy | `company/mission.md` |
+| Mission and product philosophy | `company/mission.md` |
 | Market problems we solve | `company/market-problems.md` |
-| The three commercial modules | `company/products.md` |
-| Business model and pricing logic | `company/business-model.md` |
+| Business model | `company/business-model.md` |
+| Commercial modules (products) | `company/products.md` |
 
-## Architecture & Tech
+## Architecture
+
 | Topic | File |
 |---|---|
-| System design, agent topology, data flow | `architecture/overview.md` |
-| Languages, frameworks, third-party services | `architecture/tech-stack.md` |
-| Core vs Configuration layer explained | `architecture/core-vs-config.md` |
+| System topology and data flows | `architecture/overview.md` |
+| Tech stack and library choices | `architecture/tech-stack.md` |
+| Core vs. Client Graph vs. Config (critical read) | `architecture/core-vs-config.md` |
 
-## Components (per app)
-| App | Context folder |
+## Components
+
+| Component | File |
 |---|---|
-| REST API (core backend) | `components/api/` |
-| AI Agents (LangGraph) | `components/agents/` |
-| MCP servers | `components/mcp/` |
-| Client Dashboard | `components/dashboard/` |
-| Internal Backoffice | `components/backoffice/` |
-| WhatsApp / Voice integrations | `components/integrations/` |
+| AI agents and composable modules | `components/agents/README.md` |
+| FastAPI and webhooks | `components/api/README.md` |
+| Client MCP servers | `components/mcp/README.md` |
+| Monitoring, ops, auto-remediation | `components/ops/README.md` |
+| Client dashboard | `components/dashboard/README.md` |
+| Internal backoffice | `components/backoffice/README.md` |
 
 ## Operations
+
 | Topic | File |
 |---|---|
 | Local development setup | `operations/development.md` |
-| Deployment process | `operations/deployment.md` |
-| New client onboarding | `operations/client-onboarding.md` |
+| Deploying to a client server | `operations/deployment.md` |
+| Onboarding a new client (process) | `operations/client-onboarding.md` |
 | Environment variables reference | `operations/env-vars.md` |
-| Monitoring and alerts | `operations/monitoring.md` |
+| Monitoring, alerts, incident response | `operations/monitoring.md` |
 
 ## Clients
 
-Client data lives outside `context/` to keep company-wide docs separate from per-client work.
+Client data lives outside `context/` — company-wide docs and per-client work are strictly separated.
 
 | Topic | Location |
 |---|---|
-| All clients at a glance (status, modules) | `clients/index.md` |
-| How to use the client folder system | `clients/README.md` |
+| All active clients (status, modules) | `clients/index.md` |
 | Per-client profile, requirements, meetings | `clients/<client-id>/` |
-| Template for a new client | `clients/_template/` |
-| Deployed client configuration | `infrastructure/clients/<client-id>/config.yaml` |
+| New client template | `clients/_template/` |
+| What gets deployed to client server | `deploy/clients/<client-id>/` |
 
-**When doing any work for a specific client**, read in this order:
+**When working on a specific client**, read in this order:
 1. `clients/<client-id>/profile.md`
 2. `clients/<client-id>/requirements/` (all files)
 3. `clients/<client-id>/decisions.md`
-4. Raw meetings/emails only if the above leave gaps
+4. Meetings only if the above leave gaps
 
 ## Rules
-- Always check this index before searching the repo for context.
-- Each component folder contains a `README.md` explaining that component only.
-- `architecture/overview.md` is the single source of truth for system design decisions.
-- `clients/<client-id>/decisions.md` is the source of truth for why a client's config is the way it is — do not override decisions recorded there without explicit instruction.
+
+- `architecture/core-vs-config.md` is the most important file in this directory. Read it before any structural decision.
+- `clients/<client-id>/decisions.md` records why the config is the way it is. Do not override without explicit instruction.
+- Never put client-specific information inside `context/`.

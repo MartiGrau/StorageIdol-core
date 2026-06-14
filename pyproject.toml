@@ -1,0 +1,47 @@
+[project]
+name = "storageidol"
+version = "0.1.0"
+description = "StorageIdol multi-client AI agent platform"
+requires-python = ">=3.11"
+readme = "README.md"
+
+# ── uv workspace — all Python packages/services in the monorepo ───────────────
+[tool.uv.workspace]
+members = [
+    "packages/db",
+    "packages/llm",
+    "packages/whatsapp",
+    "packages/voice",
+    "core/api",
+    "core/agents",
+    "core/watchdog",
+    "ops/alert-receiver",
+    "ops/remediation-agent",
+]
+
+[tool.uv.sources]
+storageidol-db        = { workspace = true }
+storageidol-llm       = { workspace = true }
+storageidol-whatsapp  = { workspace = true }
+storageidol-voice     = { workspace = true }
+
+# ── Shared dev/test tooling ──────────────────────────────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["packages", "core", "ops"]
+
+[tool.ruff]
+target-version = "py311"
+line-length    = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version     = "3.11"
+strict             = true
+ignore_missing_imports = true

@@ -1,14 +1,15 @@
-# Packages
+# Packages — Shared Libraries
 
-Shared libraries imported by apps. Put code here when two or more apps need it.
+Shared code imported by `core/` services and client MCPs. Never import from `clients/` here.
 
-## Planned packages
-
-| Package | Language | Description |
+| Package | Language | Purpose |
 |---|---|---|
-| `packages/integrations` | Python | Third-party SDK wrappers (WhatsApp, Twilio, ElevenLabs, Stripe, CRM adapters) |
-| `packages/models` | Python | Shared Pydantic data models (Contact, Conversation, Event, Payment) |
-| `packages/ui` | TypeScript | Shared React components used by dashboard and backoffice |
-| `packages/config` | Python | Client configuration loader and validator |
+| `llm/` | Python | Claude API wrapper with prompt caching, retry logic, model routing |
+| `whatsapp/` | Python | WhatsApp Cloud API client: send text, templates, media, reactions |
+| `voice/` | Python | ElevenLabs TTS + Twilio telephony wrapper |
+| `mcp-base/` | TypeScript | Base MCP server class extended by every client MCP |
+| `db/` | Python | Shared SQLAlchemy models, session factory, migration helpers |
 
-Each package has its own `README.md`, `pyproject.toml` or `package.json`, and `tests/` folder.
+## Usage rule
+
+Any piece of code that appears in more than one `core/` service belongs here. Any code that references a specific client's API, credentials, or behavior belongs in `clients/<id>/mcp/`.

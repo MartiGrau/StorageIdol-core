@@ -2,62 +2,87 @@
 
 ## System topology
 
-StorageIdol runs a **multi-agent system** built with LangGraph. Three specialized agents collaborate within a shared state graph:
-
 ```
-                         ┌─────────────────┐
-                         │  Orchestrator   │  ← routes intent, manages state
-                         └────────┬────────┘
-                                  │
-              ┌───────────────────┼───────────────────┐
-              │                   │                   │
-   ┌──────────▼──────┐  ┌─────────▼──────┐  ┌────────▼────────┐
-   │  Conversation   │  │    Scheduler   │  │  Escalation     │
-   │     Agent       │  │    Agent       │  │    Agent        │
-   └──────────┬──────┘  └─────────┬──────┘  └────────┬────────┘
-              │                   │                   │
-       WhatsApp / Voice      CRM triggers        Human queue
-        (ElevenLabs,          (D+N staging)      (handoff + log)
-         Twilio)
+                    ┌──────────────────────────────────────┐
+                    │  Client Server (per deployment)       │
+                    │                                       │
+  WhatsApp ────────►│  core/api  ──► Celery task ──► LangGraph
+  Voice ───────────►│                               (client graph)
+  Debt trigger ────►│                                    │
+                    │                         ┌──────────┴──────────┐
+                    │                    modules/*            mcp/<client>
+                    │                    (Core layer)    (client CRM adapter)
+                    │                                               │
+                    │  core/watchdog ──────────────► ops.storageidol.com
+                    └──────────────────────────────────────────────┘
 ```
 
-## Core layer (shared across all clients)
+## Layer definitions
+
+### Core (`core/`)
+Shared platform code. Deployed as Docker images. Same image runs for every client.
 
 | Component | Role |
 |---|---|
-| LangGraph state machine | Agent orchestration, state persistence, conditional routing |
-| ElevenLabs | Voice synthesis (text-to-speech, custom voice profiles) |
-| Twilio | Telephony (inbound/outbound calls, call routing, recording) |
-| WhatsApp Cloud API | Messaging (template messages, session messages, media) |
-| Debt scheduler | Cron-based D+N stage engine, reads CRM, triggers agents |
-| Human escalation | Detects triggers, pauses agent, routes to human queue with context |
-| Payment integration | Generates payment links, embeds in messages, tracks completion |
+| `core/api` | FastAPI — inbound webhooks (WhatsApp, Voice, Debt triggers), internal REST |
+| `core/agents` | LangGraph orchestrator + composable module subgraphs |
+| `core/dashboard` | Next.js — client-facing analytics and conversation history |
+| `core/backoffice` | Next.js — StorageIdol internal ops UI |
+| `core/watchdog` | Python monitoring sidecar — health checks, alert shipping, heartbeat |
 
-## Configuration layer (per-client)
+### Composable modules (`core/agents/modules/`)
+Independent LangGraph subgraphs. Each has a single responsibility and its own tests. A client graph wires selected modules together. No module contains client-specific logic.
 
-| Configuration | Examples |
+| Module | Purpose |
 |---|---|
-| Conversational flows | Scripts, decision trees, tone per stage |
-| WhatsApp templates | Approved templates per use case per client |
-| Knowledge base | FAQs, property listings, policy documents |
-| CRM connector | REST/webhook adapter per CRM (Salesforce, HubSpot, custom) |
-| Voice profile | Language, accent, speed, ElevenLabs voice ID |
-| Debt thresholds | D+N values, amounts, escalation conditions |
-| Infrastructure slice | Dedicated subdomain, isolated env vars, separate DB schema |
+| `auth/phone_dni` | Identity validation |
+| `intent/storage` | Storage domain intent classifier |
+| `intent/financial` | Financial domain intent classifier |
+| `conversation/faq_rag` | Knowledge base RAG answering |
+| `conversation/crm_lookup` | CRM data retrieval via MCP |
+| `debt/soft` | Debt recovery: negotiate, extend, recover possession |
+| `debt/hard` | Debt recovery: escalate to legal |
+| `lead/qualify_storage` | Storage lead qualification |
+| `escalation/human_handoff` | Human escalation with context |
+| `voice/bridge` | Real-time voice STT/TTS bridge |
 
-## Data flow (Customer Service example)
+### Client configuration (`clients/<id>/`)
+Per-client data. Never deployed to other clients. Contains:
+- `profile.md` — Business context and requirements
+- `config.yaml` — Non-sensitive settings (modules, thresholds, voice ID)
+- `graph.py` — The client's LangGraph composition (which modules, how wired)
+- `knowledge-base/` — RAG documents
+- `debt-templates.yaml` — WhatsApp templates for Meta
+- `mcp/` — TypeScript MCP server for this client's CRM API
 
-1. Client sends WhatsApp message → WhatsApp Cloud API webhook → API server
-2. API server creates/resumes LangGraph session for that contact
-3. Orchestrator agent classifies intent → routes to Conversation agent
-4. Conversation agent queries knowledge base → generates reply
-5. Reply sent via WhatsApp Cloud API
-6. If escalation trigger detected → Escalation agent pauses session, notifies human queue
-7. Human agent takes over; on resolution, session is closed and logged
+### Client deployment (`deploy/clients/<id>/`)
+What gets sent to the client's server:
+- `docker-compose.yml` — References registry images, no source code
+- `.env.example` — Template for the client to fill in their secrets
 
-## Key design decisions
+### Ops (`ops/`)
+StorageIdol internal monitoring. Receives alerts from all client watchdogs. Auto-remediates known failures. Never contains client data.
 
-- **Stateful sessions**: LangGraph persists the full conversation state between turns — no context loss on re-entry.
-- **Agent isolation**: Each client runs in an isolated configuration namespace; no data bleed between clients.
-- **Async-first**: All agent invocations are async; long-running tasks (calls, scheduling) do not block the API.
-- **Audit log**: Every agent action (message sent, call placed, escalation triggered) is written to an append-only log for compliance.
+## Data flow — WhatsApp Customer Service
+
+1. User sends WhatsApp → Meta webhook → `core/api` `/webhook/whatsapp`
+2. API validates signature, extracts `phone_number_id` → determines `client_id`
+3. API enqueues Celery task with message payload
+4. Celery worker loads client graph from `clients/<id>/graph.py`
+5. Orchestrator classifies intent → routes to correct module chain
+6. Module chain may call MCP tools (CRM lookup, auth validation)
+7. Agent generates reply → `packages/whatsapp` sends it
+8. Interaction summary POSTed back to client CRM via MCP `post_interaction_summary`
+
+## Data flow — Debt collection trigger
+
+1. Client CRM detects overdue payment → POST `core/api` `/trigger/debt`
+2. API validates request signature, extracts `case_id`, `contact_phone`, `stage`
+3. Debt collection agent loads correct stage template from `clients/<id>/debt-templates.yaml`
+4. Sends WhatsApp template message via `packages/whatsapp`
+5. If voice stage: `packages/voice` places outbound Twilio call
+6. Client response (if any) resumes the LangGraph session
+
+## Multi-brand isolation
+
+Each brand (e.g. Retras and Citium) is treated as a separate client with a separate deployment, separate Docker stack, and separate Postgres instance. Routing is by phone number — each brand's WhatsApp number maps to one deployment.

@@ -2,7 +2,7 @@
 
 The client-facing web application. Each client accesses their own instance via their dedicated subdomain.
 
-**App location:** `apps/dashboard/`
+**App location:** `core/dashboard/` (built into each client's Docker stack; reads only that client's data)
 
 **Features:**
 - Conversation history and transcripts (WhatsApp + calls)

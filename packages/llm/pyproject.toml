@@ -1,0 +1,19 @@
+[project]
+name = "storageidol-llm"
+version = "0.1.0"
+description = "Claude API wrapper: prompt caching, model routing, Langfuse tracing"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40",
+    "langfuse>=2.0",
+    "tenacity>=8.2",
+    "pydantic>=2.0",
+    "storageidol-db",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+]

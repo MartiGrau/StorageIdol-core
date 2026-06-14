@@ -1,0 +1,1 @@
+Read .claude/agents/provision-client.md and execute it for the client ID provided in the args. If no client ID was provided, ask for it before starting.

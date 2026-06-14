@@ -1,0 +1,7 @@
+packages:
+  - "packages/mcp-base"
+  - "core/dashboard"
+  - "core/backoffice"
+  - "ops/dashboard"
+  # Client MCPs are NOT listed here — they live in clients/<id>/mcp/
+  # and are built independently by the build-mcp skill.
