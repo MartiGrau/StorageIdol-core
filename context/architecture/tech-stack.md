@@ -19,7 +19,7 @@
 | Voice runtime | LiveKit Agents (STT → LLM → TTS cascade pipeline) |
 | Voice STT | Deepgram (real-time streaming) |
 | Voice TTS | ElevenLabs (streaming, per-client voice ID) |
-| Voice telephony | LiveKit + Telnyx SIP (Spanish +34 DIDs via Telnyx; LiveKit routes PSTN calls through the SIP trunk) |
+| Voice telephony | LiveKit (sole runtime) + SIP trunk for PSTN: Telnyx (default, ES +34 DIDs), or Twilio/Sinch as alternative trunks for clients with existing numbers. Twilio-native runtimes are out of scope — see `packages/voice/README.md`. |
 | WhatsApp messaging | WhatsApp Cloud API (REST) |
 | LLM observability | Langfuse (self-hosted per client deployment) |
 | API framework | FastAPI + Pydantic v2 |

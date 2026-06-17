@@ -1,17 +1,40 @@
 # Package: voice
 
-ElevenLabs TTS + Twilio telephony wrapper.
+LiveKit Agents voice runtime: Deepgram STT → shared LangGraph → ElevenLabs TTS.
 
-**Language:** Python | **Key dependencies:** `elevenlabs`, `twilio`
+**Language:** Python | **Key dependencies:** `livekit-agents`, `livekit-plugins` (deepgram, elevenlabs, silero)
 
-## What it provides
+## Architecture
 
-- `VoiceClient(elevenlabs_api_key, twilio_account_sid, twilio_auth_token)`
-- `synthesize(text, voice_id, language) -> AudioStream` — Text → speech via ElevenLabs
-- `place_call(to, from_, webhook_url) -> call_sid` — Outbound call via Twilio
-- `stream_to_call(call_sid, audio_stream)` — Stream TTS audio to active call via WebSocket
-- `transcribe(audio_stream) -> str` — STT via Twilio `<Gather>` or ElevenLabs STT
+LiveKit is the **sole voice runtime**. The pipeline wires audio I/O around the same
+LangGraph graph used for WhatsApp — the graph does all reasoning, this package only
+handles audio in/out:
+
+```
+SIP inbound/outbound → LiveKit room
+  → Silero VAD → Deepgram STT
+  → _GraphLLMAdapter (invokes the client's compiled LangGraph)
+  → ElevenLabs TTS → caller
+```
+
+See `storageidol_voice/agent.py` for the implementation.
+
+## Telephony (PSTN connectivity)
+
+Phone numbers reach LiveKit through a **SIP trunk**. The trunk provider is a
+connectivity choice only — it does not change the runtime above.
+
+| Provider | `config.yaml` value | Notes |
+|---|---|---|
+| Telnyx | `telnyx` | Default. Provisions Spanish +34 DIDs (LiveKit does not provision ES DIDs directly). |
+| Twilio | `twilio_sip` | For clients who already own Twilio numbers — point their Twilio SIP trunk at LiveKit. |
+| Sinch | `sinch` | Alternative SIP trunk. |
+
+**A Twilio-native runtime (Twilio Media Streams / ConversationRelay) is explicitly out
+of scope.** Twilio is supported only as a SIP trunk into the LiveKit pipeline. We reuse
+a client's existing Twilio numbers and ElevenLabs voice, not their voice-agent code.
 
 ## Voice profile
 
-Voice ID and language are client-specific. They live in `clients/<id>/config.yaml` under `voice.elevenlabs_voice_id` and `voice.language`. The `VoiceClient` does not hard-code any voice settings.
+Voice ID, language, and SIP trunk are client-specific and live in
+`clients/<id>/config.yaml` under `voice.*`. This package hard-codes no voice settings.
