@@ -48,12 +48,20 @@ StorageIdol operates two deployment models:
 
 | Tier | Who owns the server | Isolation | Cost to StorageIdol |
 |---|---|---|---|
-| **Client-hosted** (primary) | Client provides their VPS/cloud | Physical — separate Postgres, separate Redis | €0/mo infra |
-| **StorageIdol-hosted** (secondary) | StorageIdol provisions a VPS | Logical — shared Postgres (RLS), shared Langfuse with per-client projects | ~€80–120/mo/client |
+| **Client-hosted** (primary) | Client provides their VPS/cloud | Physical — client-owned managed Postgres, local Redis | €0/mo infra |
+| **StorageIdol-hosted** (secondary) | StorageIdol provisions a VPS | Logical — managed Postgres with RLS, shared Langfuse with per-client projects | ~€80–120/mo/client |
 
 Both tiers use the identical `deploy/_template/` stack. The only difference is `profile.md` field `hosting: client | storageidol`.
 
 For StorageIdol-hosted deployments, `scripts/provision-vps.sh <client-id>` creates and bootstraps the server automatically.
+
+## Database (external, managed)
+
+The primary application database is **not** part of the Docker stack — it is an
+external managed PostgreSQL 16+ instance (with `pgvector`) owned by the client. The
+container server is stateless and disposable; durable data lives in the managed DB.
+Provision **two databases per client — DEV and PROD**. Full requirement, provider
+list, and migration policy: `context/operations/database.md`.
 
 ## Rollback
 

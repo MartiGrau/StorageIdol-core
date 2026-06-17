@@ -2,6 +2,18 @@
 
 Technical details for all third-party integrations required by this client.
 
+## Database (external, managed — required)
+
+Managed PostgreSQL 16+ with `pgvector`, owned by the client. Two separate databases.
+Not Astra DB. See `context/operations/database.md`.
+
+| Field | DEV | PROD |
+|---|---|---|
+| Provider (RDS/Supabase/Neon/Hetzner/Cloud SQL/Azure) | — | — |
+| Host / region | — | — |
+| pgvector available | yes/no | yes/no |
+| Connection string location | DEV server `.env` | PROD server `.env` |
+
 ## CRM
 
 | Field | Value |

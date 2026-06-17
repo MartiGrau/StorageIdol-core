@@ -13,8 +13,6 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -31,8 +29,6 @@ services:
     environment:
       CLIENT_ID: <CLIENT_ID>
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -49,8 +45,6 @@ services:
       CLIENT_ID: <CLIENT_ID>
     command: celery -A tasks beat --loglevel=info
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -88,21 +82,16 @@ services:
       - api
 
   # ── Data layer ───────────────────────────────────────────────────────────────
-  postgres:
-    image: pgvector/pgvector:pg16
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+  # NOTE: The primary application database is EXTERNAL and managed by the client.
+  # It is NOT a container in this stack. The api/agents/voice services connect to it
+  # via DATABASE_URL in .env (a managed PostgreSQL 16+ with the pgvector extension —
+  # e.g. AWS RDS, Supabase, Neon, Hetzner managed Postgres, Cloud SQL, Azure DB).
+  # This keeps durable client data (conversations, PII, KB embeddings) decoupled from
+  # the stateless container server: if this server is lost, redeploy and reconnect —
+  # no data loss. See context/operations/database.md.
+  #
+  # Redis is intentionally kept local: it is an ephemeral Celery broker / cache.
+  # Losing it on server failure costs only in-flight tasks, not durable data.
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -163,6 +152,5 @@ services:
   # with a manual approval gate. See context/operations/deployment.md.
 
 volumes:
-  postgres_data:
   redis_data:
   langfuse_postgres_data:

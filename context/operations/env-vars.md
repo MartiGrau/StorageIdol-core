@@ -14,10 +14,14 @@ Variables shared across services. Each service also has its own `.env.example` w
 
 ## Database
 
+The primary database is **external and managed by the client** — never a container in
+the deploy stack. It must be managed PostgreSQL 16+ with `pgvector`. Provision two
+separate databases per client (DEV and PROD). See `context/operations/database.md`.
+
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL asyncpg connection string |
-| `REDIS_URL` | Yes | Redis connection string |
+| `DATABASE_URL` | Yes | External managed-Postgres asyncpg string (`postgresql+asyncpg://...?ssl=require`). DEV and PROD use different databases. |
+| `REDIS_URL` | Yes | Redis connection string (local ephemeral broker/cache) |
 
 ## Messaging
 

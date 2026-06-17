@@ -2,7 +2,16 @@
 
 The client-facing web application. Each client accesses their own instance via their dedicated subdomain.
 
-**App location:** `core/dashboard/` (built into each client's Docker stack; reads only that client's data)
+**App location:** `core/dashboard/` (built into each client's Docker stack, runs **on the client server**)
+
+**How it reads data:** It is a presentation layer only — it never connects to Postgres
+directly. It calls `core/api` over localhost, and the API owns the managed-DB
+connection. This is why the dashboard stays on the client server rather than being
+hosted centrally: keeping it local means no public API exposure, no CORS/cross-origin
+auth, and StorageIdol holds zero client DB credentials (zero-standing-access). With the
+database external and managed, a lost server is just redeployed — data is safe — so the
+old "centralize for availability" argument no longer applies. StorageIdol's central
+views (`backoffice`, `ops`) consume only non-PII aggregates, never raw conversations.
 
 **Features:**
 - Conversation history and transcripts (WhatsApp + calls)

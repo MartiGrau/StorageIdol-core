@@ -25,14 +25,14 @@
 | API framework | FastAPI + Pydantic v2 |
 | Task queue | Celery + Redis |
 | Database ORM | SQLAlchemy 2 (async) |
-| Vector search | pgvector (PostgreSQL extension — KB embeddings, no separate vector DB) |
+| Vector search | pgvector (PostgreSQL extension — KB embeddings, no separate vector DB; requires the managed DB to support pgvector) |
 | Frontend framework | Next.js 14 + Tailwind CSS + ShadCN UI |
 
 ## Infrastructure
 
 | Component | Service |
 |---|---|
-| Database | PostgreSQL (primary) |
+| Database | External managed PostgreSQL 16+ with pgvector (client-owned, not a container; DEV + PROD per client) — see `operations/database.md` |
 | Cache / broker | Redis |
 | File storage | S3-compatible (AWS S3 or MinIO) |
 | Containerization | Docker + Docker Compose (dev), Kubernetes (prod) |

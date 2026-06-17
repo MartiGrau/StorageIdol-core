@@ -4,7 +4,7 @@
 
 ```
                     ┌──────────────────────────────────────┐
-                    │  Client Server (per deployment)       │
+                    │  Client Server (stateless, disposable)│
                     │                                       │
   WhatsApp ────────►│  core/api  ──► Celery task ──► LangGraph
   Voice ───────────►│                               (client graph)
@@ -12,9 +12,16 @@
                     │                         ┌──────────┴──────────┐
                     │                    modules/*            mcp/<client>
                     │                    (Core layer)    (client CRM adapter)
-                    │                                               │
+                    │  core/dashboard ──► core/api                  │
                     │  core/watchdog ──────────────► ops.storageidol.com
-                    └──────────────────────────────────────────────┘
+                    └───────────────┬──────────────────────────────┘
+                                    │ DATABASE_URL (TLS)
+                                    ▼
+                    ┌──────────────────────────────────────┐
+                    │  Managed PostgreSQL (client-owned)    │
+                    │  conversations · PII · checkpoints ·  │
+                    │  pgvector KB — DEV + PROD instances   │
+                    └──────────────────────────────────────┘
 ```
 
 ## Layer definitions
@@ -84,15 +91,33 @@ StorageIdol internal monitoring. Receives alerts from all client watchdogs. Auto
 5. If voice stage: `packages/voice` initiates outbound LiveKit call via Telnyx SIP trunk
 6. Client response (if any) resumes the LangGraph session
 
+## Data layer (external, managed)
+
+The primary database is **not** in the Docker stack. It is an external managed
+PostgreSQL 16+ instance (with `pgvector`) owned by the client, holding all durable
+data: conversations, PII, LangGraph checkpoints, and KB embeddings. Containers connect
+via `DATABASE_URL`. This makes the container server **stateless and disposable** — if
+it is lost, redeploy and reconnect with no data loss. Each client provisions two
+databases (DEV + PROD). See `context/operations/database.md`.
+
+## Where the dashboard lives
+
+`core/dashboard` is a presentation layer only — it never queries Postgres directly; it
+calls `core/api`, which owns the DB connection. It runs **on the client server** and
+reads that client's data over localhost (no public API exposure, no central credential
+store). StorageIdol's central `backoffice`/`ops` views consume only non-PII aggregates
+(watchdog heartbeat + per-client Langfuse), never raw client conversations — preserving
+zero-standing-access. See `context/components/dashboard/README.md`.
+
 ## Multi-brand isolation
 
-Each brand (e.g. Retras and Citium) is treated as a separate client with a separate deployment, separate Docker stack, and separate Postgres instance. Routing is by phone number — each brand's WhatsApp number maps to one deployment.
+Each brand (e.g. Retras and Citium) is treated as a separate client with a separate deployment, separate Docker stack, and separate managed Postgres instance. Routing is by phone number — each brand's WhatsApp number maps to one deployment.
 
 ## Deployment tiers
 
 | Tier | Who provides the server | Data isolation |
 |---|---|---|
-| **Client-hosted** (primary) | Client's own VPS / cloud | Physical — dedicated Postgres, Redis per client |
-| **StorageIdol-hosted** (secondary) | StorageIdol-managed VPS | Logical — shared Postgres with Row Level Security, shared Langfuse with per-client projects |
+| **Client-hosted** (primary) | Client's own VPS / cloud | Physical — client-owned managed Postgres, local Redis per client |
+| **StorageIdol-hosted** (secondary) | StorageIdol-managed VPS | Logical — managed Postgres with Row Level Security, shared Langfuse with per-client projects |
 
 Both tiers run the identical `deploy/_template/` Docker stack. See `context/operations/deployment.md` for details.

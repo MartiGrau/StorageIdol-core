@@ -43,6 +43,8 @@ StorageIdol documentation. Read the file most relevant to your current task befo
 |---|---|
 | Local development setup | `operations/development.md` |
 | Deploying to a client server | `operations/deployment.md` |
+| Database (external managed Postgres, DEV+PROD) | `operations/database.md` |
+| Disaster recovery (lost server / DB / Redis) | `operations/disaster-recovery.md` |
 | Onboarding a new client (process) | `operations/client-onboarding.md` |
 | Environment variables reference | `operations/env-vars.md` |
 | Monitoring, alerts, incident response | `operations/monitoring.md` |

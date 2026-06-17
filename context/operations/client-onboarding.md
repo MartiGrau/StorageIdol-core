@@ -15,6 +15,7 @@ Plan for a minimum of **2 weeks** from kickoff to go-live when Spanish voice num
 ### 1. Kickoff call (Day 0)
 
 Collect from client:
+- Managed PostgreSQL 16+ (with pgvector) connection strings — **two databases: DEV and PROD** (AWS RDS, Supabase, Neon, Hetzner, Cloud SQL, or Azure; not Astra DB). See `operations/database.md`.
 - CRM type and API credentials
 - WhatsApp Business Account ID and phone number
 - Spanish +34 phone number for voice (provisioned via Telnyx — start request on Day 0, takes 1–5 business days)

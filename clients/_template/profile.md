@@ -31,7 +31,8 @@
 
 - Config file: `infrastructure/clients/<client-id>/config.yaml`
 - Subdomain: `<client-id>.storageidol.com` (when live)
-- DB schema: `client_<client-id>` (when provisioned)
+- Hosting tier: `client` | `storageidol`
+- Database: external managed PostgreSQL 16+ (pgvector), client-owned — **two instances: DEV + PROD**. Provider and connection details in `requirements/integrations.md`. See `context/operations/database.md`.
 
 ## Quick summary
 
