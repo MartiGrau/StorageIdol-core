@@ -15,12 +15,12 @@ All active and pipeline clients at a glance. Update this file when a client's st
 
 | Client ID | Company | Modules | Status | Go-live | Notes |
 |---|---|---|---|---|---|
-| _(none yet)_ | — | — | — | — | — |
+| `redtras` | Retras / Citium | Customer Service, Debt Collection | `onboarding` | TBD | Two brands (Retras + Citium), same PMS platform, separate DBs |
 
 ## Adding a client
 
 When a new client is signed:
 1. Add a row to this table
-2. Create their folder: `cp -r clients/_template clients/<client-id>`
+2. Run `scripts/provision-client.sh <client-id>` (copies `_template`, substitutes placeholders)
 3. Fill in `clients/<client-id>/profile.md`
-4. Create `infrastructure/clients/<client-id>/config.yaml` from the infrastructure template
+4. Fill in `clients/<client-id>/config.yaml` with values from the kickoff call
